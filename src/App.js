@@ -1,50 +1,70 @@
-import React, { useState } from 'react';
-import { QRCodeCanvas } from 'qrcode.react';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+
+import LoginPage from './LoginPage';
+import RegisterPage from './RegisterPage';
+import Dashboard from './Dashboard';
+import MyAccount from './MyAccount';
+import PrivateRoute from './PrivateRoute';
+import NavBar from './components/NavBar';
+
+function AuthRedirect({ children }) {
+  const token = localStorage.getItem('token');
+  const location = useLocation();
+
+  // Redirect logged-in users away from login/register pages to dashboard
+  if (token && (location.pathname === '/login' || location.pathname === '/register')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Redirect logged-out users from protected routes to login
+  return children;
+}
 
 function App() {
-  const [amount, setAmount] = useState('');
-  const [url, setUrl] = useState('');
-
-  const handleGeneratePayment = async () => {
-    try {
-      const response = await fetch('https://crypto-pay-backend.onrender.com/create-charge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount }),
-      });
-
-      const data = await response.json();
-      if (data.hostedUrl) {
-        setUrl(data.hostedUrl);
-      } else {
-        alert("Failed to generate payment link.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Something went wrong.");
-    }
-  };
-
   return (
-    <div className="App">
-      <h1>Crypto Payment</h1>
-      <input
-        type="number"
-        placeholder="Enter amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-      <button onClick={handleGeneratePayment}>Generate Payment</button>
+    <Router>
+      <NavBar />
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            <AuthRedirect>
+              <LoginPage />
+            </AuthRedirect>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <AuthRedirect>
+              <RegisterPage />
+            </AuthRedirect>
+          }
+        />
 
-      {url && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Scan to Pay</h3>
-          <QRCodeCanvas value={url} size={256} />
-          <p><a href={url} target="_blank" rel="noreferrer">{url}</a></p>
-        </div>
-      )}
-    </div>
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/myaccount"
+          element={
+            <PrivateRoute>
+              <MyAccount />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Redirect unknown routes to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </Router>
   );
 }
 
