@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { QRCodeCanvas } from 'qrcode.react';
 
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 const Dashboard = () => {
   const [charges, setCharges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,7 @@ const Dashboard = () => {
 
     const fetchCharges = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/charges/${businessId}`, {
+        const res = await axios.get(`${API_BASE}/api/charges/${businessId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCharges(res.data.charges || []);
@@ -43,7 +45,7 @@ const Dashboard = () => {
     setSubmitting(true);
     try {
       const res = await axios.post(
-        'http://localhost:3001/api/charges',
+        `${API_BASE}/api/charges`,
         {
           amount: parseFloat(amount),
           currency,
@@ -116,40 +118,3 @@ const Dashboard = () => {
       ) : (
         <ul className="space-y-6">
           {charges.map((charge) => (
-            <li
-              key={charge.id}
-              className="border p-4 rounded-2xl shadow hover:shadow-lg transition"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-lg font-semibold">
-                  {charge.amount} {charge.currency}
-                </span>
-                <span className="text-sm text-gray-600">Status: {charge.status}</span>
-              </div>
-              <div className="text-sm text-gray-500 mb-3">Provider: {charge.provider}</div>
-
-              {charge.paymentUrl ? (
-                <div className="flex flex-col items-center">
-                  <QRCodeCanvas value={charge.paymentUrl} size={160} />
-                  <p className="text-xs mt-2 break-all text-center">{charge.paymentUrl}</p>
-                  <a
-                    href={charge.paymentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 text-blue-600 text-sm underline"
-                  >
-                    💸 Pay Now
-                  </a>
-                </div>
-              ) : (
-                <p className="text-sm text-red-500 text-center mt-2">❌ No payment URL available</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
-
-export default Dashboard;
